@@ -8,6 +8,27 @@ spring:
     password: Krishh#15
     driver-class-name: com.mysql.jdbc.Driver
 
+  security:
+    oauth2:
+      resource-server:
+        jwt:
+          issuer-uri: https://dev-39605210.okta.com/oauth2/default
+      client:
+        registration:
+          my-internal-client:
+            provider: okta
+            authorization-grant-type: client_credentials
+            scope: internal
+            client-id: 0oae6x0v9xexusOuY5d7
+            client-secret: OFuG5ox-pELbN2DSH0hE0tmD6xMus2vFFQkhxv8xJ8-4JerNcEC1SWJ0xhm-axb_
+        provider:
+          okta:
+            issuer-uri: https://dev-39605210.okta.com/oauth2/default
+
+
+  config:
+    import: optional:configserver:http://localhost:8085
+
   jpa:
     hibernate:
       ddl-auto: update
@@ -20,12 +41,61 @@ spring:
   application:
     name: USER-SERVICE
 
-eureka:
-  instance:
-    prefer-ip-address: true
+#eureka:
+#  instance:
+#    prefer-ip-address: true
+#
+#  client:
+#    fetch-registry: true
+#    register-with-eureka: true
+#    service-url:
+#      defaultZone: http://localhost:8761/eureka
 
-  client:
-    fetch-registry: true
-    register-with-eureka: true
-    service-url:
-      defaultZone: http://localhost:8761/eureka
+management:
+  health:
+    circuit-breakers:
+      enabled: true
+  endpoints:
+    web:
+      exposure:
+        include: health
+
+  endpoint:
+    health:
+      show-details: always
+
+resilience4j:
+  circuit-breaker:
+    instances:
+      ratingHotelBreaker:
+        registerHealthIndicator: true
+        eventConsumerBufferSize: 10
+        failureRateThreshold: 50 #percentage
+        minimumNumberOfCalls: 5
+        automaticTransactionFromOpenToHalfOpenEnabled: true
+        waitDurationInOpenState: 6s
+        permittedNumberOfCallsInHalfOpenState: 3
+        slidingWindowSize: 10
+        slidingWindowType: COUNT_BASED
+
+
+#Retry Config
+  retry:
+    instances:
+      ratingHotelSlow:
+        max-attempts: 3
+        wait-duration: 5s
+
+#RateLimiter config
+  ratelimiter:
+    instances:
+      userRateLimiter:
+        limit-refresh-period: 4s
+        limit-for-period: 2
+        timeout-duration: 2s
+
+#OKTA config
+okta:
+  oauth2:
+    issuer: https://dev-39605210.okta.com/oauth2/default
+    audience: api://default
